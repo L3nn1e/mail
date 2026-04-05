@@ -1,0 +1,83 @@
+#  Main Setup
+myhostname = mail.idle-r.ru
+mydomain = idle-r.ru
+myorigin = $mydomain
+inet_interfaces = all
+inet_protocols = ipv4
+#mydestination = $myhostname, $mydomain, localhost.$mydomain, localhost
+mydestination = $myhostname, localhost.$mydomain, localhost
+home_mailbox =
+virtual_transport = lmtp:unix:/run/cyrus/socket/lmtp
+virtual_mailbox_domains = idle-r.ru
+virtual_alias_maps = hash:/etc/postfix/virtual_aliases
+
+mynetworks = 127.0.0.0/8, 172.16.0.0/13
+relay_domains = 
+
+# Masquarade
+masquerade_domains = idle-r.ru, localhost, localhost.localdomain, nexus.local
+masquerade_exceptions = postmaster
+
+# TLS
+smtpd_tls_cert_file=/etc/pki/tls/certs/mail.crt
+smtpd_tls_key_file=/etc/pki/tls/private/mail.key
+smtpd_tls_CAfile=/etc/pki/tls/certs/mail.crt
+smtpd_tls_security_level=may
+smtpd_tls_auth_only=yes
+smtpd_tls_mandatory_protocols = !SSLv2 !SSLv3 !TLSv1 !TLSv1.1
+smtpd_tls_protocols = !SSLv2 !SSLv3 !TLSv1 !TLSv1.1
+smtpd_tls_mandatory_ciphers = medium
+smtpd_tls_eecdh_grade = auto
+compatibility_level = 3.6
+
+# SMTP AUTH
+smtpd_sasl_auth_enable = yes
+smtpd_sasl_type = cyrus
+smtpd_sasl_path = smtpd
+smtpd_sasl_security_options = noanonymous
+smtpd_sasl_local_domain = $myhostname
+broken_sasl_auth_clients = yes
+smtp_tls_security_level = may
+smtpd_sasl_service = imap
+
+# Linitations
+smtpd_client_connection_rate_limit = 3
+default_process_limit = 20
+smtpd_recipient_limit = 100
+message_size_limit = 25600000
+bounce_queue_lifetime = 5d
+maximal_queue_lifetime = 5d
+smtpd_client_message_rate_limit = 10
+#smtpd_sasl_auth_timeout = 20s
+#smtpd_sasl_auth_soft_bounce = yes
+smtpd_error_sleep_time = 5s
+smtpd_soft_error_limit = 3
+smtpd_hard_error_limit = 6
+
+# Filters
+smtpd_milters = unix:/var/spool/postfix/clamav/clamav-milter.sock, unix:/var/spool/postfix/spamass/spamass.sock, inet:127.0.0.1:8891
+non_smtpd_milters = $smtpd_milters
+milter_default_action = accept
+milter_protocol = 6
+
+
+# Queue 
+queue_directory = /var/spool/postfix
+delay_warning_time = 4h
+
+# Logs
+smtpd_sasl_authenticated_header = yes
+smtpd_tls_loglevel = 3
+debug_peer_level = 3
+maillog_file = /var/log/maillog
+
+smtpd_relay_restrictions = 
+    permit_mynetworks, 
+    permit_sasl_authenticated, 
+    reject_unauth_destination,
+    reject_unlisted_recipient, 
+    reject_unknown_recipient_domain
+smtpd_recipient_restrictions =
+    permit_sasl_authenticated,
+    permit_mynetworks,
+    reject_unauth_destination
