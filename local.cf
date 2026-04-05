@@ -1,0 +1,49 @@
+# Заголовок для спама
+rewrite_header Subject *****SPAM*****
+
+report_safe 0
+
+required_score 5.0
+
+use_bayes 1
+bayes_auto_learn 1
+
+bayes_ignore_header X-Bogosity
+bayes_ignore_header X-Spam-Flag
+bayes_ignore_header X-Spam-Status
+
+
+# Плагин Shortcircuit
+ifplugin Mail::SpamAssassin::Plugin::Shortcircuit
+
+bayes_min_ham_num 10
+bayes_min_spam_num 50
+
+bayes_path ~/.spamassassin/
+bayes_file_mode 0777
+
+endif
+
+
+# Плагин ExtractText
+ifplugin Mail::SpamAssassin::Plugin::ExtractText
+
+extracttext_external pdftotext /usr/bin/pdftotext -nopgbrk -layout -enc UTF-8 {} -
+extracttext_use pdftotext .pdf application/pdf
+
+extracttext_external antiword /usr/bin/antiword -t -w 0 -m UTF-8.txt {}
+extracttext_use antiword .doc application/(?:vnd\.?)?ms-?word.*
+
+extracttext_external unrtf /usr/bin/unrtf --nopict {}
+extracttext_use unrtf .doc .rtf application/rtf text/rtf
+
+extracttext_external odt2txt /usr/bin/odt2txt --encoding=UTF-8 {}
+extracttext_use odt2txt .odt .ott application/.*?opendocument.*text
+extracttext_use odt2txt .sdw .stw application/(?:x-)?soffice application/(?:x-)?starwriter
+
+extracttext_external tesseract {OMP_THREAD_LIMIT=1} /usr/bin/tesseract -c page_separator= {} -
+extracttext_use tesseract .jpg .png .bmp .tif .tiff image/(?:jpeg|png|x-ms-bmp|tiff)
+
+add_header all ExtractText-Flags _EXTRACTTEXTFLAGS_
+
+endif
